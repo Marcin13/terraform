@@ -1,5 +1,5 @@
 variable "ssh_key" {
-  default = "ssh-rsa AA-YOUR PUB-RSA-keyr"
+  default = "ssh-rsa AA-YOUR PUB-RSA-key"
 }
 variable "proxmox_host" {
     default = "pev"
