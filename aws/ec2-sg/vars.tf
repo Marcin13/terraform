@@ -11,7 +11,7 @@ variable "security_group_name" {
 variable "server_port" {
   description = "The port the server will use for HTTP requests"
   type        = number
-  default     = 80
+  default     = 8080
 }
 variable "ssh_port" {
   description = "The port for ssh"
