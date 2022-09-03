@@ -1,9 +1,3 @@
-/*
-terraform {
-  required_version = ">= 0.12, < 0.13"
-}
-*/
-
 provider "aws" {
   profile = "default"
   region  = "eu-central-1"
@@ -12,7 +6,7 @@ provider "aws" {
 #  version = "~> 2.0"
 }
 
-resource "aws_launch_configuration" "example" {
+resource "aws_launch_configuration" "my_lc" {
   image_id        = "ami-065deacbcaac64cf2" # ubuntu 22.04
   instance_type   = "t2.micro"
   security_groups = [aws_security_group.instance.id]
@@ -32,14 +26,22 @@ data "template_file" "user_data" {
 
   vars = {
     server_port = var.server_port
-    availability_zone = data.aws_instance.server.availability_zone
-    subnets_id  = data.aws_subnet_ids.default.id
+    #subnets_id  = data.aws_subnet_ids.default.id
     # db_port     = data.terraform_remote_state.db.outputs.port
   }
 }
 
-resource "aws_autoscaling_group" "example" {
-  launch_configuration = aws_launch_configuration.example.name
+data "aws_vpc" "default" {
+  default = true
+}
+
+data "aws_subnet_ids" "default" {
+  vpc_id = data.aws_vpc.default.id
+}
+
+resource "aws_autoscaling_group" "my_asg" {
+  name = var.auto_scaling_group_name
+  launch_configuration = aws_launch_configuration.my_lc.name
   vpc_zone_identifier  = data.aws_subnet_ids.default.ids
 
   target_group_arns = [aws_lb_target_group.asg.arn]
@@ -47,11 +49,26 @@ resource "aws_autoscaling_group" "example" {
 
   min_size = 2
   max_size = 10
-
+  health_check_grace_period = 100
+  force_delete          = true
   tag {
     key                 = "Name"
-    value               = "terraform-asg-example"
+    value               = "my_asg_instance"
     propagate_at_launch = true
+  }
+}
+
+resource "aws_autoscaling_policy" "my_asp" {
+  autoscaling_group_name = var.auto_scaling_group_name
+  name = "foobar"
+  policy_type = "TargetTrackingScaling"
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ALBRequestCountPerTarget"
+      resource_label = "my_asg_instance"
+
+    }
+    target_value = 10
   }
 }
 
@@ -92,24 +109,6 @@ resource "aws_security_group" "instance" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
-
-data "aws_vpc" "default" {
-  default = true
-}
-
-data "aws_subnet_ids" "default" {
-  vpc_id = data.aws_vpc.default.id
-}
-
-data "aws_instance" "server" {
-  tags = {
-    Name = var.instance_name // or two filter by a unique word use; *private*
-  }
-
-## Declare the data source
-#data "aws_availability_zones" "available" {
-#  state = "available"
-#}
 
 resource "aws_lb" "example" {
 
