@@ -37,4 +37,4 @@ sed -i "s/EC2_AVAIL_ZONE/$EC2_AVAIL_ZONE/" index.txt
 
 cp index.txt index.html
 
- nohup busybox httpd -f -p 80 &
+ nohup busybox httpd -f -p 8080 &

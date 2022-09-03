@@ -6,30 +6,30 @@ provider "aws" {
 #  version = "~> 2.0"
 }
 
-resource "aws_launch_configuration" "my_lc" {
-  image_id        = "ami-065deacbcaac64cf2" # ubuntu 22.04
-  instance_type   = "t2.micro"
-  security_groups = [aws_security_group.instance.id]
+#resource "aws_launch_configuration" "my_lc" {
+#  image_id        = "ami-065deacbcaac64cf2" # ubuntu 22.04
+#  instance_type   = "t2.micro"
+#  security_groups = [aws_security_group.instance.id]
+#
+#
+#  user_data       = data.template_file.user_data.rendered
+#
+#  # Required when using a launch configuration with an auto scaling group.
+#  # https://www.terraform.io/docs/providers/aws/r/launch_configuration.html
+#  lifecycle {
+#    create_before_destroy = true
+#  }
+#}
 
-
-  user_data       = data.template_file.user_data.rendered
-
-  # Required when using a launch configuration with an auto scaling group.
-  # https://www.terraform.io/docs/providers/aws/r/launch_configuration.html
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-data "template_file" "user_data" {
-  template = file("user-data.sh")
-
-  vars = {
-    server_port = var.server_port
-    #subnets_id  = data.aws_subnet_ids.default.id
-    # db_port     = data.terraform_remote_state.db.outputs.port
-  }
-}
+#data "template_file" "user_data" {
+#  template = file("user-data.sh")
+#
+#  vars = {
+#    server_port = var.server_port
+#    #subnets_id  = data.aws_subnet_ids.default.id
+#    # db_port     = data.terraform_remote_state.db.outputs.port
+#  }
+#}
 
 data "aws_vpc" "default" {
   default = true
@@ -38,19 +38,37 @@ data "aws_vpc" "default" {
 data "aws_subnet_ids" "default" {
   vpc_id = data.aws_vpc.default.id
 }
+data "aws_launch_template" "my_LT" {
+  name = "My_Server"
+}
 
 resource "aws_autoscaling_group" "my_asg" {
   name = var.auto_scaling_group_name
-  launch_configuration = aws_launch_configuration.my_lc.name
-  vpc_zone_identifier  = data.aws_subnet_ids.default.ids
+  launch_template {
+    id = data.aws_launch_template.my_LT.id
+    version =data.aws_launch_template.my_LT.latest_version
+  }
 
-  target_group_arns = [aws_lb_target_group.asg.arn]
+  #availability_zones = [data.aws_subnet_ids.default.ids]
+  ##vpc_zone_identifier  = data.aws_subnet_ids.default.ids
+
+  ##target_group_arns = [aws_lb_target_group.asg.arn]
   health_check_type = "ELB"
 
   min_size = 2
   max_size = 10
   health_check_grace_period = 100
   force_delete          = true
+
+  instance_refresh {
+    strategy = "Rolling"
+    preferences {
+      min_healthy_percentage = 50
+    }
+    triggers = ["tag"]
+  }
+
+
   tag {
     key                 = "Name"
     value               = "my_asg_instance"
