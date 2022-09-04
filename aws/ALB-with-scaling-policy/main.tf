@@ -16,7 +16,7 @@ resource "aws_launch_configuration" "example" {
   image_id        = "ami-065deacbcaac64cf2" # ubuntu 22.04
   instance_type   = "t2.micro"
   security_groups = [aws_security_group.instance.id]
-
+  key_name = "my-key-pair"
   user_data = <<-EOF
              #!/bin/bash
 
@@ -66,10 +66,10 @@ resource "aws_launch_configuration" "example" {
 }
 
 resource "aws_autoscaling_group" "example" {
-  name_prefix = "example"
+  name =  "my_autoscaling_group"
 
   launch_configuration = aws_launch_configuration.example.name
-  vpc_zone_identifier  = data.aws_subnet_ids.default.ids
+  vpc_zone_identifier  = data.aws_subnets.default.ids
 
   target_group_arns = [aws_lb_target_group.asg.arn]
   health_check_type = "ELB"
@@ -84,32 +84,32 @@ resource "aws_autoscaling_group" "example" {
   }
 }
 
-resource "aws_autoscalingplans_scaling_plan" "example" {
-  name = "example-dynamic-cost-optimization"
-  application_source {
-    tag_filter {
-      key = "application"
-      values = ["example"]
-    }
-  }
-  scaling_instruction {
-    max_capacity       = 4
-    min_capacity       = 2
-    resource_id        = format("autoScalingGroup/%s",aws_security_group.instance.name)
-    scalable_dimension = "autoscaling:autoScalingGroup:DesiredCapacity"
-    service_namespace  = "autoscaling"
-
-    target_tracking_configuration {
-      predefined_scaling_metric_specification {
-
-        predefined_scaling_metric_type = "ALBRequestCountPerTarget"
-       # resource_label = "${ .arn_suffix}/${tg.arn_suffix}"
-        resource_label = "${aws_lb.example.arn_suffix}/${aws_lb_target_group.asg.arn_suffix}"
-      }
-      target_value = 20
-    }
-  }
-}
+#resource "aws_autoscalingplans_scaling_plan" "example" {
+#  name = "example-dynamic-cost-optimization"
+#  application_source {
+#    tag_filter {
+#      key = "application"
+#      values = ["example"]
+#    }
+#  }
+#  scaling_instruction {
+#    max_capacity       = 4
+#    min_capacity       = 2
+#    resource_id        = format("autoScalingGroup/%s",aws_security_group.instance.name)
+#    scalable_dimension = "autoscaling:autoScalingGroup:DesiredCapacity"
+#    service_namespace  = "autoscaling"
+#
+#    target_tracking_configuration {
+#      predefined_scaling_metric_specification {
+#
+#        predefined_scaling_metric_type = "ALBRequestCountPerTarget"
+#       # resource_label = "${ .arn_suffix}/${tg.arn_suffix}"
+#        resource_label = "${aws_lb.example.arn_suffix}/${aws_lb_target_group.asg.arn_suffix}"
+#      }
+#      target_value = 20
+#    }
+#  }
+#}
 ###################################################################
 resource "aws_security_group" "instance" {
   vpc_id = data.aws_vpc.default.id
@@ -123,25 +123,34 @@ resource "aws_security_group" "instance" {
   }
 }
 
-#resource "aws_autoscaling_policy" "my_AS_policy" {
-#  autoscaling_group_name = aws_security_group.instance.name
-#  name                   = var.instance_security_group_name
-#  scaling_adjustment     = 4
-#  target_tracking_configuration {
-#    predefined_metric_specification {
-#      predefined_metric_type = "ASGAverageCPUUtilization"
-#    }
-#
-#    target_value = 40.0
-#  }
-#}
+resource "aws_autoscaling_policy" "my_autoscaling_policy" {
+  autoscaling_group_name = aws_autoscaling_group.example.name
+  name                   = "my_autoscaling_policy"
+  adjustment_type        = "ChangeInCapacity"
+  ## cooldown               = 100
+  policy_type = "TargetTrackingScaling"
+  # scaling_adjustment     = 4
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ALBRequestCountPerTarget"
+      resource_label = "${aws_lb.example.arn_suffix}/${aws_lb_target_group.asg.arn_suffix}"
+
+    }
+
+    target_value = 20
+  }
+}
 
 data "aws_vpc" "default" {
   default = true
 }
 
-data "aws_subnet_ids" "default" {
-  vpc_id = data.aws_vpc.default.id
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+
 }
 
 resource "aws_lb" "example" {
@@ -149,7 +158,7 @@ resource "aws_lb" "example" {
   name = var.alb_name
 
   load_balancer_type = "application"
-  subnets            = data.aws_subnet_ids.default.ids
+  subnets            = data.aws_subnets.default.ids
   security_groups    = [aws_security_group.alb.id]
 }
 
