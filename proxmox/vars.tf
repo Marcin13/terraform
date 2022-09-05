@@ -1,5 +1,5 @@
 variable "ssh_key" {
-  default = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHz+yltBw5JTjA/bmUb6JkWyeoKvK6TGEARAjj0UhRsW ansible"
+  default = "ssh-ed25519..............sdfsd.fsdfsdf.sdfsdfsdfsd.fsd.fs"
 }
 variable "proxmox_host" {
     default = "pve"
