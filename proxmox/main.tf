@@ -17,10 +17,12 @@ provider "proxmox" {
   # leave tls_insecure set to true unless you have your proxmox SSL certificate situation fully sorted out (if you do, you will know)
   pm_tls_insecure = true
 }
+
 # full list of arguments with explanation
 # https://registry.terraform.io/providers/Telmate/proxmox/latest/docs/resources/vm_qemu
 # resource is formatted to be "[type]" "[entity_name]" so in this case
 # we are looking to create a proxmox_vm_qemu entity named test_server
+
 resource "proxmox_vm_qemu" "vm-server" {
   count = 0 # just want 1 for now, set to 0 and apply to destroy VM
   name = "Ansible-${count.index + 1}" #count.index starts at 0, so + 1 means this VM will be named test-vm-1 in proxmox
