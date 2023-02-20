@@ -1,9 +1,11 @@
 variable "ssh_key" {
-  default = "ssh-rsa AA-YOUR PUB-RSA-key"
+  default = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHz+yltBw5JTjA/bmUb6JkWyeoKvK6TGEARAjj0UhRsW ansible"
 }
 variable "proxmox_host" {
-    default = "pev"
+    default = "pve"
 }
 variable "template_name" {
-    default = "ubuntu-20.04"
+    default = "VM 9000"
+     ## default = "ubuntu-20.04"
+      ##  default = "Ubuntu-Minimal-20.04-LTS"
 }
