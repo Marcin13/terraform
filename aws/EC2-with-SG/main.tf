@@ -6,10 +6,8 @@ provider "aws" {
 resource "aws_instance" "instance" {
   # ami                    = "ami-0e2031728ef69a466" #aws linux
   ami = "ami-065deacbcaac64cf2" # ubuntu 22.04
-
   instance_type          = "t2.micro"
   vpc_security_group_ids = [aws_security_group.security_group.id]
-
   user_data = data.template_file.user_data.rendered
 
   tags = {
@@ -30,6 +28,7 @@ data "template_file" "user_data" {
     # db_port     = data.terraform_remote_state.db.outputs.port
   }
 }
+
 data "aws_vpc" "default" {
   default = true
 }

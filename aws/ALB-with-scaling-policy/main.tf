@@ -111,6 +111,7 @@ resource "aws_autoscaling_group" "example" {
 #  }
 #}
 ###################################################################
+
 resource "aws_security_group" "instance" {
   vpc_id = data.aws_vpc.default.id
   name = var.instance_security_group_name
