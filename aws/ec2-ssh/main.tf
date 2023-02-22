@@ -39,7 +39,7 @@ resource "aws_instance" "app_server" {
 
 resource "aws_key_pair" "my_key_pair" {
   key_name   = "ansible"
-  public_key = file("${path.module}/.ssh/ansible.pub")
+  public_key = file("${path.module}./.ssh/ansible.pub")
 
 }
 resource "aws_security_group" "ssh_access" {
