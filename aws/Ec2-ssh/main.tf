@@ -40,7 +40,7 @@ provider "aws" {
 # profile (string): The named profile to use when authenticating with the provider.
   profile = "default"
 # endpoints (map): A set of custom endpoints to use when working with the provider.
-# ignore_tags (bool): If set to true, Terraform will ignore all tags when interacting with the provider.
+# ignore_tags (bool): If set to true, Terraform will ignore all Tags when interacting with the provider.
 }
 
 resource "aws_instance" "app_server" {

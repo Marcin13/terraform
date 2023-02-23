@@ -62,11 +62,11 @@ resource "aws_db_instance" "my_db2" {
     Environment = "Development"
   }
   # Use for_each to loop over var.custom_tags
-  #      dynamic "tags" {
+  #      dynamic "Tags" {
   #        for_each = var.custom_tags
   #        content {
-  #          key                 = tags.key
-  #          value               = tags.value
+  #          key                 = Tags.key
+  #          value               = Tags.value
   #          propagate_at_launch = true
   #
   #        }
