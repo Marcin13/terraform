@@ -1,4 +1,20 @@
 terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "3.71.0"
+    }
+  }
+  required_version = ">= 1.1.0"
+#  backend "s3" {
+#    bucket = "my-terraform-state-bucket"
+#    key    = "my-terraform-state-key"
+#    region = "us-west-2"
+#  }
+#  experimental {
+#    workspace_dir = ".terraform/workspaces"
+#  }
+
 #  cloud {
 #    organization = "m4r6cinorg"
 #
@@ -7,6 +23,8 @@ terraform {
 #    }
 #  }
 
+  # Uncomment the following line to enable detailed logs
+  # log_path = "terraform.log"
 }
 
 
@@ -28,10 +46,8 @@ provider "aws" {
 resource "aws_instance" "app_server" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t2.micro"
-  vpc_security_group_ids = [aws_security_group.ssh_access.id]
+  vpc_security_group_ids = [aws_security_group.web_server_sg.name]
   key_name = aws_key_pair.my_key_pair.key_name
-
-
   tags = {
     Name = var.instance_name
   }
@@ -40,20 +56,34 @@ resource "aws_instance" "app_server" {
 resource "aws_key_pair" "my_key_pair" {
   key_name   = "ansible"
   public_key = file("${path.module}./.ssh/ansible.pub")
-
 }
-resource "aws_security_group" "ssh_access" {
-  name_prefix = "ssh_access_"
 
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+resource "aws_security_group" "web_server_sg" {
+  name = var.name_prefix
+
+  dynamic "ingress" {
+    for_each = var.ingress_ports
+    content {
+      from_port   = ingress.value.from_port
+      to_port     = ingress.value.to_port
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+      description = ingress.value.description
+    }
   }
 
+  dynamic "egress" {
+    for_each = var.egress_rules
+    content {
+      from_port   = egress.value.from_port
+      to_port     = egress.value.to_port
+      protocol    = "-1"
+      cidr_blocks = ["0.0.0.0/0"]
+      description = egress.value.description
+    }
+  }
   tags = {
-    Name = "SSH Access"
+    Name = "Web Server Security Group"
   }
 }
 
@@ -81,3 +111,4 @@ data "aws_ami" "ubuntu" {
     values = ["x86_64"]
   }
 }
+
