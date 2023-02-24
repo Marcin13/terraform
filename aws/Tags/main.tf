@@ -4,46 +4,31 @@ provider "aws" {
 }
 
 resource "aws_instance" "instance" {
-  # ami                    = "ami-0e2031728ef69a466" #aws linux
-  ami = "ami-065deacbcaac64cf2" # ubuntu 22.04
-  instance_type          = "t2.micro"
+  ami                    = "ami-065deacbcaac64cf2" # ubuntu 22.04
+  instance_type          = "t3.small"
   vpc_security_group_ids = [aws_security_group.security_group.id]
-  # user_data = data.template_file.user_data.rendered
+  user_data              = data.template_file.user_data.rendered
 
   tags = {
-  for key, value in var.tags:
-  key => value
+    for key, value in var.tags :
+    key => value
+  }
+
+  lifecycle {
+    create_before_destroy = true
   }
 }
 
-#data "template_file" "user_data" {
-#  template = file("user-data.sh")
-#
-#  vars = {
-#    server_port = var.server_port
-#    #az = "az"
-#    #az          = data.aws_instance.server.availability_zone
-#    #ip = "ip"
-#    #ip = data.aws_instance.server.public_ip
-#    # db_port     = data.terraform_remote_state.db.outputs.port
-#  }
-#}
+data "template_file" "user_data" {
+  template = file("user-data.sh")
 
-data "aws_vpc" "default" {
-  default = true
+  vars = {
+    server_port = var.server_port
+  }
 }
-
-#data "aws_instance" "server" {
-#  # update id before when terraform apply
-#  instance_id = "i-07f5d20bc5448e890"
+#data "aws_vpc" "default" {
+#  default = true
 #}
-
-## Required when using a launch configuration with an auto scaling group.
-## https://www.terraform.io/docs/providers/aws/r/launch_configuration.html
-#lifecycle {
-#  create_before_destroy = true
-#}
-
 
 resource "aws_security_group" "security_group" {
 
@@ -77,7 +62,7 @@ resource "aws_security_group" "security_group" {
   }
 
   tags = {
-  for key, value in var.tags:
-  key => value
+    for key, value in var.tags :
+    key => value
   }
 }
